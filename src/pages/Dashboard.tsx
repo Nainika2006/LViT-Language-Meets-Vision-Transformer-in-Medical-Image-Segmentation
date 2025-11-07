@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Image as ImageIcon, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
 
 export default function Dashboard() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -26,6 +27,42 @@ export default function Dashboard() {
     }
   };
 
+  const createMarkedImage = (originalImage: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          
+          // Draw red circles to mark diseased areas
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 4;
+          ctx.globalAlpha = 0.8;
+          
+          // Mark multiple areas (simulating AI detection)
+          const areas = [
+            { x: img.width * 0.35, y: img.height * 0.3, radius: 60 },
+            { x: img.width * 0.32, y: img.height * 0.45, radius: 40 },
+          ];
+          
+          areas.forEach(area => {
+            ctx.beginPath();
+            ctx.arc(area.x, area.y, area.radius, 0, 2 * Math.PI);
+            ctx.stroke();
+          });
+          
+          resolve(canvas.toDataURL('image/png'));
+        }
+      };
+      img.src = originalImage;
+    });
+  };
+
   const handleAnalyze = async () => {
     if (!selectedImage || !reportText) {
       toast.error("Please upload an image and enter patient report");
@@ -34,17 +71,20 @@ export default function Dashboard() {
 
     setIsAnalyzing(true);
     
-    // TODO: Implement AI analysis
+    // Create marked image with red circles
+    const markedImage = await createMarkedImage(imagePreview);
+    
     setTimeout(() => {
       setResults({
-        maskedImage: imagePreview, // This would be the AI-processed image
-        analysis: "AI Analysis: Opacity detected in the right upper lobe of the lung, measuring approximately 2.5cm. The lesion shows irregular borders and heterogeneous density, suggestive of possible pneumonia or early-stage malignancy. Recommendation: Follow-up CT scan in 3 months and clinical correlation advised.",
+        maskedImage: markedImage,
+        analysis: "AI Analysis: Opacity detected in the left upper lobe of the lung, measuring approximately 2.5cm. The lesion shows irregular borders and heterogeneous density, suggestive of possible pneumonia or early-stage malignancy. Additional small opacity noted in the left mid-zone. Recommendation: Follow-up CT scan in 3 months and clinical correlation advised.",
         confidence: 87,
         findings: [
-          "Right upper lobe opacity",
-          "Irregular borders detected",
-          "Size: approximately 2.5cm",
-          "Heterogeneous density pattern"
+          "Left upper lobe opacity detected",
+          "Irregular borders with heterogeneous density",
+          "Primary lesion size: approximately 2.5cm",
+          "Secondary opacity in left mid-zone",
+          "Pattern suggestive of inflammatory or neoplastic process"
         ]
       });
       setIsAnalyzing(false);
@@ -53,8 +93,71 @@ export default function Dashboard() {
   };
 
   const handleDownloadReport = () => {
-    toast.success("Report downloaded successfully");
-    // TODO: Implement PDF generation
+    if (!results) return;
+    
+    try {
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      
+      // Header
+      pdf.setFontSize(20);
+      pdf.setTextColor(0, 150, 136);
+      pdf.text("Medical Imaging Analysis Report", pageWidth / 2, 20, { align: 'center' });
+      
+      // Date
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 28, { align: 'center' });
+      
+      // Confidence Score
+      pdf.setFontSize(12);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`Confidence Score: ${results.confidence}%`, 20, 40);
+      
+      // Original Image
+      pdf.setFontSize(14);
+      pdf.text("Original Image:", 20, 50);
+      pdf.addImage(imagePreview, 'PNG', 20, 55, 80, 80);
+      
+      // Analyzed Image
+      pdf.text("Analysis Result:", 110, 50);
+      pdf.addImage(results.maskedImage, 'PNG', 110, 55, 80, 80);
+      
+      // Key Findings
+      pdf.setFontSize(14);
+      pdf.text("Key Findings:", 20, 145);
+      pdf.setFontSize(11);
+      let yPos = 155;
+      results.findings.forEach((finding: string, idx: number) => {
+        const lines = pdf.splitTextToSize(`${idx + 1}. ${finding}`, pageWidth - 40);
+        pdf.text(lines, 20, yPos);
+        yPos += lines.length * 6;
+      });
+      
+      // Detailed Analysis
+      pdf.setFontSize(14);
+      pdf.text("Detailed Analysis:", 20, yPos + 10);
+      pdf.setFontSize(11);
+      const analysisLines = pdf.splitTextToSize(results.analysis, pageWidth - 40);
+      pdf.text(analysisLines, 20, yPos + 20);
+      
+      // Disclaimer
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(
+        "This report is AI-generated and should be reviewed by a qualified medical professional.",
+        pageWidth / 2,
+        pdf.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+      
+      // Save PDF
+      pdf.save(`medical-analysis-${new Date().getTime()}.pdf`);
+      toast.success("Report downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF report");
+    }
   };
 
   return (
