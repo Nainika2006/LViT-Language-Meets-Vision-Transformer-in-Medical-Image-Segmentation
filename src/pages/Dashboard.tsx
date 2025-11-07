@@ -39,21 +39,17 @@ export default function Dashboard() {
         if (ctx) {
           ctx.drawImage(img, 0, 0);
           
-          // Draw red circles to mark diseased areas
-          ctx.strokeStyle = '#ff0000';
-          ctx.lineWidth = 4;
-          ctx.globalAlpha = 0.8;
+          // Highlight diseased areas with semi-transparent red overlay
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
           
-          // Mark multiple areas (simulating AI detection)
+          // Highlight multiple areas (simulating AI detection)
           const areas = [
-            { x: img.width * 0.35, y: img.height * 0.3, radius: 60 },
-            { x: img.width * 0.32, y: img.height * 0.45, radius: 40 },
+            { x: img.width * 0.30, y: img.height * 0.25, width: img.width * 0.15, height: img.height * 0.15 },
+            { x: img.width * 0.28, y: img.height * 0.42, width: img.width * 0.12, height: img.height * 0.10 },
           ];
           
           areas.forEach(area => {
-            ctx.beginPath();
-            ctx.arc(area.x, area.y, area.radius, 0, 2 * Math.PI);
-            ctx.stroke();
+            ctx.fillRect(area.x, area.y, area.width, area.height);
           });
           
           resolve(canvas.toDataURL('image/png'));
