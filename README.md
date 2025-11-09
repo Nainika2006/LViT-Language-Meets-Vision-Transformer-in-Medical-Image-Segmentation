@@ -206,7 +206,4 @@ This project uses several datasets:
 | **LViT-T (1/4)** | **80.95** | **71.31** |
 
 ***
-***
-YOUTUBE VIDE LINK:
-https://youtu.be/Azha7RSCZ50
-***
+
