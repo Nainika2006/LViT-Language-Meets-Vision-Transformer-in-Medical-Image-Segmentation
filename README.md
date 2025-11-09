@@ -19,6 +19,16 @@ The goal is to make **medical image segmentation faster, more accurate, and more
 
 ***
 
+***
+YOUTUBE VIDEO LINK:
+https://youtu.be/Azha7RSCZ50
+***
+***
+POWERPOINT PRESENTATION LINK:
+https://1drv.ms/p/c/ce5d20b0b0b1f7ca/EckJpJ81gTFBjLMwwdLOBxEBDRrYYkNJuAblM0JQ51nDgg?e=wNSvXg
+***
+
+
 ## 🧩 System Architecture
 
 ```
